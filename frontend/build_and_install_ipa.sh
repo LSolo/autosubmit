@@ -56,21 +56,58 @@ node remove_spm_framework.cjs
 echo "🔗 Linking Frameworks..."
 node add_frameworks.cjs
 
-# 7. Build for Simulator (For local testing on PC)
-echo "📱 Building for iOS Simulator..."
-xcodebuild build \
-    -project "$PROJECT_PATH" \
-    -scheme "$SCHEME" \
-    -configuration Release \
-    -sdk iphonesimulator \
-    -destination 'platform=iOS Simulator,name=iPhone 14' \
-    CONFIGURATION_BUILD_DIR="$(pwd)/$SIMULATOR_DIR" \
-    -quiet
+# 5. Build for Simulator (x86_64/arm64)
+echo "🏗️ Building for Simulator..."
+xcodebuild -project ios/App/App.xcodeproj \
+           -scheme App \
+           -configuration Release \
+           -sdk iphonesimulator \
+           -derivedDataPath output \
+           CODE_SIGN_IDENTITY="" \
+           CODE_SIGNING_REQUIRED=NO \
+           CODE_SIGNING_ALLOWED=NO
 
-echo "📦 Packaging Simulator Build..."
-cd "$RELEASE_DIR"
-zip -r -q AutoSubmit-Simulator.zip simulator/App.app
-cd ..
+# 6. Create Payload Structure
+echo "📦 Packaging IPA..."
+rm -rf release/simulator
+mkdir -p release/simulator/Payload
+cp -R "output/Build/Products/Release-iphonesimulator/App.app" release/simulator/Payload/
+mv release/simulator/Payload/App.app release/simulator/App.app # Keep it at top level for manual install
+
+# 7. Manually Embed Frameworks (Fix for Simulator Crash)
+echo "🔧 Embedding Frameworks..."
+FRAMEWORKS_DIR="release/simulator/App.app/Frameworks"
+mkdir -p "$FRAMEWORKS_DIR"
+
+# Copy from the Simulator slice
+cp -R "ios/App/Libs/Capacitor.xcframework/ios-arm64_x86_64-simulator/Capacitor.framework" "$FRAMEWORKS_DIR/"
+cp -R "ios/App/Libs/Cordova.xcframework/ios-arm64_x86_64-simulator/Cordova.framework" "$FRAMEWORKS_DIR/"
+
+# Remove nested signatures to avoid conflicts
+rm -rf "$FRAMEWORKS_DIR/Capacitor.framework/_CodeSignature"
+rm -rf "$FRAMEWORKS_DIR/Cordova.framework/_CodeSignature"
+
+# Sign Frameworks (Ad-Hoc)
+codesign --force --sign "-" --timestamp=none "$FRAMEWORKS_DIR/Capacitor.framework"
+codesign --force --sign "-" --timestamp=none "$FRAMEWORKS_DIR/Cordova.framework"
+
+# Re-sign the main App binary and bundle
+echo "✍️ Signing App..."
+codesign --force --sign "-" --timestamp=none --deep "release/simulator/App.app"
+
+# 8. Create ZIP (Simulator Build)
+cd release/simulator
+zip -r ../AutoSubmit-Simulator.zip App.app
+cd ../..
+
+echo "✅ Simulator Build Ready: release/AutoSubmit-Simulator.zip"
+
+# 9. Install to Simulator
+echo "📲 Installing to Simulator..."
+xcrun simctl install booted release/simulator/App.app
+echo "✅ Installed to Booted Simulator"
+echo "🚀 Launching App..."
+xcrun simctl launch booted com.autosubmit.app
 
 # 7. Archive for Device (Unsigned/Ad-Hoc IPA)
 echo "📱 Archiving for iOS Device (Unsigned)..."
