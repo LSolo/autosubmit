@@ -29,9 +29,22 @@ yarn-error.log*
 *.swp
 *.swo
 
-# Mobile
+# Mobile Build Artifacts
 frontend/ios/App/CapApp-SPM/.build/
 frontend/ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
 frontend/ios/App/App.xcodeproj/xcuserdata/
+frontend/ios/App.xcarchive/
+frontend/ios/output/
+frontend/release/
+frontend/local-cap/
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/captures/
+frontend/android/local.properties
 *.ipa
 *.apk
+*.aab
+*.zip
+
+# Temporary Scripts (Optional - keeping build scripts but ignoring temp tests)
+backend/test_ollama.ts

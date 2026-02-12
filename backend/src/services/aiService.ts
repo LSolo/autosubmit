@@ -6,7 +6,7 @@ export class AIService {
 
   constructor() {
     this.ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-    this.ollamaModel = process.env.OLLAMA_MODEL || 'llama3'; // Default to llama3
+    this.ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2:1b'; // Default to installed model
   }
 
   private async callOllama(systemPrompt: string, userPrompt: string, format: 'json' | 'text' = 'text'): Promise<any> {
