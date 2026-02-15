@@ -10,6 +10,7 @@ dotenv.config();
 import imageRoutes from './routes/imageRoutes';
 import aiRoutes from './routes/aiRoutes';
 import submissionRoutes from './routes/submissionRoutes';
+import configRoutes from './routes/configRoutes';
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +33,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/images', imageRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/submit', submissionRoutes);
+app.use('/api/config', configRoutes);
 
 app.get('/', (req, res) => {
   res.send('Autosubmit Backend is running');

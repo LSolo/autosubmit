@@ -1,35 +1,68 @@
 import axios from 'axios';
+import { configService } from './configService';
+import OpenAI from 'openai';
 
 export class AIService {
-  private ollamaBaseUrl: string;
-  private ollamaModel: string;
-
-  constructor() {
-    this.ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-    this.ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2:1b'; // Default to installed model
+  
+  private async getClient(): Promise<{ type: 'ollama' | 'openai', client: any, config: any }> {
+    const config = await configService.getConfig();
+    if (config.aiProvider === 'openai') {
+      if (!config.openai.apiKey) throw new Error('OpenAI API Key is missing in settings');
+      return { 
+        type: 'openai', 
+        client: new OpenAI({ apiKey: config.openai.apiKey }), 
+        config: config.openai 
+      };
+    } else {
+      return { 
+        type: 'ollama', 
+        client: null, 
+        config: config.ollama 
+      };
+    }
   }
 
-  private async callOllama(systemPrompt: string, userPrompt: string, format: 'json' | 'text' = 'text'): Promise<any> {
-    try {
-      const response = await axios.post(`${this.ollamaBaseUrl}/api/chat`, {
-        model: this.ollamaModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        format: format,
-        stream: false,
-      });
-      return response.data.message.content;
-    } catch (error: any) {
-      console.error('Error calling Ollama:', error);
-      if (error.code === 'ECONNREFUSED') {
-        throw new Error('Ollama is not running. Please start Ollama locally (run "ollama serve").');
+  private async callLLM(systemPrompt: string, userPrompt: string, format: 'json' | 'text' = 'text'): Promise<string> {
+    const { type, client, config } = await this.getClient();
+
+    if (type === 'openai') {
+      try {
+        const completion = await client.chat.completions.create({
+          model: config.model || 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          response_format: format === 'json' ? { type: 'json_object' } : { type: 'text' },
+        });
+        return completion.choices[0].message.content || '';
+      } catch (error: any) {
+        console.error('OpenAI Error:', error);
+        throw new Error(`OpenAI Error: ${error.message}`);
       }
-      if (error.response) {
-         throw new Error(`Ollama Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    } else {
+      // Ollama
+      try {
+        const response = await axios.post(`${config.baseUrl}/api/chat`, {
+          model: config.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          format: format,
+          stream: false,
+        });
+        return response.data.message.content;
+      } catch (error: any) {
+        console.error('Ollama Error:', error);
+        if (error.code === 'ECONNREFUSED') {
+          throw new Error(`Ollama is not running at ${config.baseUrl}. Please start Ollama or check settings.`);
+        }
+        if (error.response) {
+           throw new Error(`Ollama Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        }
+        throw error;
       }
-      throw error;
     }
   }
 
@@ -52,7 +85,7 @@ export class AIService {
     `;
 
     try {
-      const content = await this.callOllama(systemPrompt, userPrompt, 'json');
+      const content = await this.callLLM(systemPrompt, userPrompt, 'json');
       return JSON.parse(content);
     } catch (error) {
       console.error('Error generating metadata:', error);
@@ -77,7 +110,7 @@ export class AIService {
       `;
       
       try {
-        const content = await this.callOllama(systemPrompt, userPrompt, 'json');
+        const content = await this.callLLM(systemPrompt, userPrompt, 'json');
         results[lang] = content ? JSON.parse(content) : {};
       } catch (e) {
         console.error(`Failed to translate to ${lang}`, e);
@@ -98,20 +131,8 @@ export class AIService {
       Tone: ${tone} (e.g., excited, professional, concise, humorous)
       Input Points: 
       ${input}
-      
-      Requirements:
-      - Use appropriate emojis if the tone allows.
-      - Structure with clear sections (e.g., New Features, Fixes) if appropriate.
-      - Keep it under 500 characters if possible, but comprehensive.
-      - Return ONLY the generated text, no surrounding quotes.
     `;
-
-    try {
-      const content = await this.callOllama(systemPrompt, userPrompt, 'text');
-      return content || '';
-    } catch (error) {
-      console.error('Error generating release notes:', error);
-      throw error;
-    }
+    
+    return this.callLLM(systemPrompt, userPrompt, 'text');
   }
 }

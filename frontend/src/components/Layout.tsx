@@ -8,6 +8,7 @@ import {
   DocumentTextIcon,
   CloudArrowUpIcon,
   SparklesIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
@@ -19,6 +20,7 @@ const navigation = [
   { name: 'Sprite Lab', href: '/images', icon: PhotoIcon },
   { name: 'Neural Link', href: '/metadata', icon: DocumentTextIcon },
   { name: 'Launch Pad', href: '/submission', icon: CloudArrowUpIcon },
+  { name: 'System Core', href: '/settings', icon: Cog6ToothIcon },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

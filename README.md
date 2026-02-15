@@ -22,9 +22,41 @@ A cross-platform automation app that streamlines the process of submitting mobil
 - App Store Connect API Key (for iOS submission)
 - OpenAI API Key (for metadata generation)
 
+## Desktop Application (Standalone)
+
+The application has been built as a standalone macOS app:
+
+- **Location**: `frontend/dist_electron/mac/AutoSubmit.app`
+- **Installation**: Drag this file to your `/Applications` folder.
+
+### Features
+- **Bundled Backend**: The app automatically starts its own local server on port 3000. No need to run `npm run dev` separately!
+- **Zero Config**: Works out of the box (requires Node.js installed on the system).
+
+### Troubleshooting
+- **Logs**: If the app fails to start, check the console logs. The backend logs are output to the Electron console.
+- **Ports**: Ensure port 3000 is free before starting the app.
+
 ## Setup & Running
 
-### 1. Backend
+### Quick Start (Recommended)
+
+Run the entire stack (Backend + Frontend) with a single command:
+
+```bash
+# Install dependencies for all packages
+npm install
+
+# Start development server (Web Dashboard + Backend)
+npm run dev
+
+# Start Desktop App (Electron + Backend)
+npm run desktop
+```
+
+### Manual Setup
+
+#### 1. Backend
 
 ```bash
 cd backend
@@ -36,29 +68,30 @@ npm run dev
 
 The server runs on `http://localhost:3000`.
 
-### 2. Frontend (Dashboard)
+#### 2. Frontend (Dashboard)
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev          # Web version
+npm run electron:dev # Desktop version
 ```
 
 The dashboard runs on `http://localhost:5173`.
 
-### 3. CLI
+#### 3. CLI
 
 ```bash
 cd cli
 npm install
-npm link # Optional: to make 'autosubmit' command available globally
+npm link # make 'autosubmit' command available globally
 ```
 
 Usage:
 ```bash
-node index.js --help
-node index.js process-images -i path/to/icon.png
-node index.js generate-metadata -n "MyApp" -f "Fast, Secure"
+autosubmit --help
+autosubmit process-images -i path/to/icon.png
+autosubmit generate-metadata -n "MyApp" -f "Fast, Secure"
 ```
 
 ## Configuration

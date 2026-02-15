@@ -1,10 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import ImageProcessor from './pages/ImageProcessor';
 import MetadataGenerator from './pages/MetadataGenerator';
 import AppSubmission from './pages/AppSubmission';
 import Wizard from './pages/Wizard';
+import Settings from './pages/Settings';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/images" element={<ImageProcessor />} />
           <Route path="/metadata" element={<MetadataGenerator />} />
           <Route path="/submission" element={<AppSubmission />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
     </Router>

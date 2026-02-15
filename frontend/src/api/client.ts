@@ -18,4 +18,6 @@ export const api = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   generateReleaseNotes: (data: { input: string, tone: string }) => apiClient.post('/ai/release-notes', data),
+  getConfig: () => apiClient.get('/config'),
+  saveConfig: (config: any) => apiClient.post('/config', config),
 };
